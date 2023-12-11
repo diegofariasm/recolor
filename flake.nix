@@ -32,13 +32,12 @@
 
         {
           # This generates a overlay
-          # You should consume this in your flake if you want maiden.
+          # You should consume this in your flake if you want recolor.
           overlayAttrs = {
-            inherit (config.packages) maiden;
+            inherit (config.packages) recolor;
           };
 
-
-          packages.default = recolorPackage;
+          packages.recolor = recolorPackage;
         };
     };
 }

@@ -36,8 +36,8 @@
           overlayAttrs = {
             inherit (config.packages) recolor;
           };
-
           packages.recolor = recolorPackage;
+
         };
     };
 }

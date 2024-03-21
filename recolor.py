@@ -1,6 +1,7 @@
 # Desc: A program for recoloring icon packs, themes and wallpapers. For NovaOS.
+# 
 # Auth: Nicklas Vraa
-
+import tempfile
 from typing import List, Set, Tuple, Dict, Optional
 from tqdm import tqdm
 from colormath.color_objects import sRGBColor, LabColor
@@ -853,26 +854,47 @@ name_to_hex_dict["yellowgreen"]="#9acd32"
 def list_of_strings(arg):
     return arg.split(',')
 
+def recolor_logic(args):
+    if args.color:
+        recolor_modified(args.src, hex_to_hsl(args.color), "color", args.smooth)
+    elif args.color_from_palette:
+        for idx in range(len(args.color_from_palette)):
+            args.color_from_palette[idx] = hex_to_hsl(args.color_from_palette[idx])
+        recolor_modified(args.src, args.color_from_palette, "color-from-palette", args.smooth)
+    elif args.palette:
+        recolor_modified(args.src, args.palette, "palette", args.smooth)  
+
 def main():
     parser = argparse.ArgumentParser(description='Recolor an image.')
 
-    parser.add_argument('--src', type=str)
-    parser.add_argument('--color', type=str)
-    parser.add_argument('--color-from-palette', type=list_of_strings)
-    parser.add_argument('--palette', type=list_of_strings)
+    exclusive_group = parser.add_mutually_exclusive_group(required=True)
+    exclusive_group.add_argument('--color', type=str)
+    exclusive_group.add_argument('--color-from-palette', type=list_of_strings)
+    exclusive_group.add_argument('--palette', type=list_of_strings)
+
+    parser.add_argument('src', type=str)
     parser.add_argument('--smooth', type=bool, default=True)
 
     args = parser.parse_args()
 
-    if args.color != None:
-        recolor_modified(args.src, hex_to_hsl(args.color), "color", args.smooth)
-    if args.color_from_palette != None:
-        for idx in range(len(args.color_from_palette)):
-            args.color_from_palette[idx] = hex_to_hsl(args.color_from_palette[idx])
+    if not os.path.isdir(args.src):
+        previous_src = args.src
 
-        recolor_modified(args.src, args.color_from_palette, "color-from-palette", args.smooth)
-    if args.palette != None:
-        recolor_modified(args.src, args.palette, "palette", args.smooth)
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            # Move the file to a temporary folder
+            shutil.move(args.src, tmpdirname)
+
+            # Change the parser arguments to suit the new source
+            args.src = tmpdirname
+
+            # Recolor the directory
+            recolor_logic(args) 
+
+            # Move our file to its original path
+            shutil.move(os.path.join(tmpdirname, os.path.basename(previous_src)), previous_src)
+    else:
+        recolor_logic(args)
+ 
 
 if __name__ == '__main__':
     main()
